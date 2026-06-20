@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de Control de Inventario - Plásticos La 15">
+    <meta name="theme-color" content="#0a0e17">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Plásticos La 15 — Inventario</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏭</text></svg>">
+</head>
+<body>
+
+    <!-- ═══════ HEADER ═══════ -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">🏭</div>
+                <div class="logo-text">
+                    <h1>Plásticos La 15</h1>
+                    <span>Control de Inventario</span>
+                </div>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-view="dashboard">
+                    <span>📊</span><span class="nav-label">Inventario</span>
+                </button>
+                <button class="nav-btn" data-view="movimientos">
+                    <span>📦</span><span class="nav-label">Movimientos</span>
+                </button>
+                <button class="nav-btn" data-view="historial">
+                    <span>📋</span><span class="nav-label">Historial</span>
+                    <span class="badge" id="alert-badge" style="display:none">0</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <main class="main">
+
+        <!-- ─────── DASHBOARD ─────── -->
+        <section id="view-dashboard" class="view-section active">
+
+            <!-- Backup bar -->
+            <div class="backup-bar">
+                <div class="backup-info">
+                    💾 Último backup: <strong id="last-backup-date">Nunca</strong>
+                </div>
+                <div class="backup-actions">
+                    <button class="btn btn-backup btn-sm" onclick="exportarBackup()">📥 Descargar Backup</button>
+                    <button class="btn btn-ghost btn-sm" onclick="importarBackup()">📤 Restaurar</button>
+                    <button class="btn btn-ghost btn-sm" onclick="resetearDatos()" style="color:var(--color-danger);border-color:var(--color-danger-border);">🗑️ Resetear</button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card accent">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Total Productos</div>
+                </div>
+                <div class="stat-card ok">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="stat-ok">0</div>
+                    <div class="stat-label">Stock Normal</div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon">🔴</div>
+                    <div class="stat-value" id="stat-bajo">0</div>
+                    <div class="stat-label">Stock Bajo</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon">🟠</div>
+                    <div class="stat-value" id="stat-alto">0</div>
+                    <div class="stat-label">Sobre-stock</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-value" id="stat-mov-hoy">0</div>
+                    <div class="stat-label">Movimientos Hoy</div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="alerts-panel" id="alerts-panel">
+                <div class="alerts-title">⚠️ Alertas de Inventario</div>
+                <div id="alerts-list"></div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="search-box">
+                    <span class="icon">🔍</span>
+                    <input type="text" id="search-input" placeholder="Buscar por referencia, medida o categoría...">
+                </div>
+                <select class="filter-select" id="filter-categoria" onchange="filterByCategoria(this.value)">
+                    <option value="">Todas las categorías</option>
+                </select>
+                <button class="btn btn-entrada" onclick="openMovimientoModal('ENTRADA')">📥 Entrada</button>
+                <button class="btn btn-salida" onclick="openMovimientoModal('SALIDA')">📤 Salida</button>
+            </div>
+
+            <!-- Products Table -->
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Referencia</th>
+                            <th>Categoría</th>
+                            <th class="hide-tablet">Medida</th>
+                            <th class="hide-tablet">Calibre</th>
+                            <th>Stock</th>
+                            <th class="hide-tablet">Mínimo</th>
+                            <th class="hide-tablet">Máximo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productos-tbody">
+                        <tr><td colspan="8"><div class="loading-overlay"><div class="spinner"></div> Cargando...</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ─────── MOVIMIENTOS ─────── -->
+        <section id="view-movimientos" class="view-section">
+            <div style="max-width: 700px; margin: 0 auto;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                    📦 Registrar Movimiento
+                </h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <button class="btn btn-entrada" style="padding: 2rem; flex-direction: column; font-size: 1.1rem; border-radius: var(--radius-lg);"
+                            onclick="openMovimientoModal('ENTRADA')">
+                        <span style="font-size: 2.5rem; margin-bottom: 0.5rem;">📥</span>
+                        Registrar Entrada
+                        <span style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; margin-top: 4px;">Reabastecimiento</span>
+                    </button>
+                    <button class="btn btn-salida" style="padding: 2rem; flex-direction: column; font-size: 1.1rem; border-radius: var(--radius-lg);"
+                            onclick="openMovimientoModal('SALIDA')">
+                        <span style="font-size: 2.5rem; margin-bottom: 0.5rem;">📤</span>
+                        Registrar Salida
+                        <span style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; margin-top: 4px;">Venta / Remisión</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─────── HISTORIAL ─────── -->
+        <section id="view-historial" class="view-section">
+            <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                📋 Historial de Movimientos
+            </h2>
+            <div class="toolbar">
+                <div class="search-box">
+                    <span class="icon">🔍</span>
+                    <input type="text" id="mov-filter-busqueda" placeholder="Buscar por referencia o remisión..." oninput="filterMovimientos()">
+                </div>
+                <select class="filter-select" id="mov-filter-tipo" onchange="filterMovimientos()">
+                    <option value="">Todos los tipos</option>
+                    <option value="ENTRADA">📥 Entradas</option>
+                    <option value="SALIDA">📤 Salidas</option>
+                </select>
+                <div class="date-filters">
+                    <input type="date" id="mov-filter-desde" onchange="filterMovimientos()" title="Desde">
+                    <span style="color: var(--text-muted);">a</span>
+                    <input type="date" id="mov-filter-hasta" onchange="filterMovimientos()" title="Hasta">
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th><th>Tipo</th><th>Referencia</th><th>Categoría</th>
+                            <th>Cantidad</th><th>Remisión</th>
+                            <th class="hide-tablet">Cliente/Prov.</th>
+                            <th class="hide-tablet">Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody id="movimientos-tbody">
+                        <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><p>Los movimientos aparecerán aquí</p></div></td></tr>
+                    </tbody>
+                </table>
+                <div class="pagination" id="mov-pagination" style="display: none;">
+                    <button class="page-btn" id="btn-prev" onclick="movPagPrev()">← Anterior</button>
+                    <span class="page-info" id="page-info">Página 1</span>
+                    <button class="page-btn" id="btn-next" onclick="movPagNext()">Siguiente →</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ═══════ MODAL: MOVIMIENTO ═══════ -->
+    <div class="modal-overlay" id="modal-movimiento">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="mov-modal-title">📥 Registrar Movimiento</h2>
+                <button class="modal-close" onclick="closeAllModals()">✕</button>
+            </div>
+            <form id="mov-form" onsubmit="submitMovimiento(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="mov-tipo" value="ENTRADA">
+                    <input type="hidden" id="mov-producto-id" value="">
+                    <div class="form-group">
+                        <label>Producto <span class="required">*</span></label>
+                        <div class="autocomplete-container">
+                            <input type="text" class="form-control" id="mov-producto-search"
+                                   placeholder="Buscar por referencia, medida..." autocomplete="off" required>
+                            <div class="autocomplete-list" id="mov-autocomplete-list"></div>
+                        </div>
+                    </div>
+                    <div class="stock-info" id="mov-stock-info" style="display: none;">
+                        <div>
+                            <span class="stock-label">Stock disponible</span>
+                            <div class="stock-number" id="mov-stock-display">0</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad <span class="required">*</span></label>
+                        <input type="number" class="form-control" id="mov-cantidad" min="0.01" step="0.01" placeholder="Ej: 5" required>
+                    </div>
+                    <div class="form-group">
+                        <label id="remision-label">Nº Remisión</label>
+                        <input type="text" class="form-control" id="mov-remision" placeholder="Ej: REM-001234">
+                    </div>
+                    <div class="form-group">
+                        <label id="contacto-label">Cliente (opcional)</label>
+                        <input type="text" class="form-control" id="mov-contacto" placeholder="Nombre del cliente o proveedor">
+                    </div>
+                    <div class="form-group">
+                        <label>Observaciones</label>
+                        <input type="text" class="form-control" id="mov-observaciones" placeholder="Notas adicionales...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" onclick="closeAllModals()">Cancelar</button>
+                    <button type="submit" class="btn btn-entrada" id="mov-submit-btn">📥 Registrar Entrada</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
