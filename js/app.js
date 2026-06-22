@@ -1,86 +1,120 @@
 /**
  * app.js — Sistema de Inventario Plásticos La 15
- * Versión estática con localStorage — lista para GitHub Pages
- * Sin servidor, sin base de datos, sin instalaciones.
+ * Conectado a Firebase Realtime Database
  */
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC9zOPHxrxq7jezYCfDRwU3IUdvJfFTvTA",
+  authDomain: "inventario-la15.firebaseapp.com",
+  projectId: "inventario-la15",
+  storageBucket: "inventario-la15.firebasestorage.app",
+  messagingSenderId: "318205537009",
+  appId: "1:318205537009:web:6cb17449ce2189e2041750",
+  databaseURL: "https://inventario-la15-default-rtdb.firebaseio.com"
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+
 // ══════════════════════════════════════════════
-// Motor de datos — localStorage
+// Motor de datos — Firebase
 // ══════════════════════════════════════════════
 const DB = {
-    KEYS: {
-        PRODUCTOS: 'pcl15_productos',
-        MOVIMIENTOS: 'pcl15_movimientos',
-        INITIALIZED: 'pcl15_initialized',
-        LAST_BACKUP: 'pcl15_last_backup'
-    },
+    productos: [],
+    movimientos: [],
 
-    getProductos() {
-        return JSON.parse(localStorage.getItem(this.KEYS.PRODUCTOS) || '[]');
-    },
-    setProductos(data) {
-        localStorage.setItem(this.KEYS.PRODUCTOS, JSON.stringify(data));
-    },
-    getMovimientos() {
-        return JSON.parse(localStorage.getItem(this.KEYS.MOVIMIENTOS) || '[]');
-    },
-    setMovimientos(data) {
-        localStorage.setItem(this.KEYS.MOVIMIENTOS, JSON.stringify(data));
-    },
-    isInitialized() {
-        return localStorage.getItem(this.KEYS.INITIALIZED) === 'true';
-    },
-    setInitialized() {
-        localStorage.setItem(this.KEYS.INITIALIZED, 'true');
-    },
-
-    // ── Inicializar desde JSON si es primera vez ──
     async initialize() {
-        if (this.isInitialized()) {
-            console.log('✅ Datos existentes cargados desde localStorage');
-            return;
-        }
+        return new Promise((resolve) => {
+            let productosLoaded = false;
+            let movimientosLoaded = false;
+
+            const checkReady = () => {
+                if (productosLoaded && movimientosLoaded) {
+                    resolve();
+                }
+            };
+
+            // Escuchar cambios en productos en tiempo real
+            onValue(ref(database, 'productos'), async (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    this.productos = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
+                } else {
+                    await this.loadInitialData();
+                }
+                productosLoaded = true;
+                checkReady();
+                if (productosLoaded && movimientosLoaded && state.currentView === 'dashboard') {
+                    renderDashboard();
+                }
+            }, (error) => {
+                console.error(error);
+                showToast("Error Firebase: " + error.message, "error");
+            });
+
+            // Escuchar cambios en movimientos en tiempo real
+            onValue(ref(database, 'movimientos'), (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    this.movimientos = Object.values(data).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+                } else {
+                    this.movimientos = [];
+                }
+                movimientosLoaded = true;
+                checkReady();
+                if (productosLoaded && movimientosLoaded && state.currentView === 'historial') {
+                    renderMovimientosTable();
+                }
+                if (productosLoaded && movimientosLoaded && state.currentView === 'dashboard') {
+                    renderStats();
+                }
+            }, (error) => {
+                console.error(error);
+                showToast("Error Firebase: " + error.message, "error");
+            });
+        });
+    },
+
+    async loadInitialData() {
         try {
             const res = await fetch('data/productos.json');
-            const productos = await res.json();
-            this.setProductos(productos);
-            this.setMovimientos([]);
-            this.setInitialized();
-            console.log(`✅ ${productos.length} productos importados del catálogo`);
-        } catch (err) {
-            console.error('❌ Error cargando catálogo:', err);
-            // Si no puede cargar el JSON, inicializar vacío
-            if (!this.getProductos().length) {
-                this.setProductos([]);
-                this.setMovimientos([]);
-            }
+            const data = await res.json();
+            // Guardar en Firebase
+            await set(ref(database, 'productos'), data);
+            console.log("✅ Datos iniciales subidos a Firebase");
+            this.productos = data;
+        } catch(e) {
+            console.error("Error loading initial data", e);
         }
     },
 
-    // ── Registrar movimiento ──
-    registrarMovimiento(productoId, tipo, cantidad, remision, cliente, proveedor, observaciones) {
-        const productos = this.getProductos();
-        const producto = productos.find(p => p.id === productoId);
+    getProductos() { return this.productos; },
+    getMovimientos() { return this.movimientos; },
 
-        if (!producto) return { ok: false, error: 'Producto no encontrado' };
+    async registrarMovimiento(productoId, tipo, cantidad, remision, cliente, proveedor, observaciones) {
+        const index = this.productos.findIndex(p => p.id === productoId);
+        if (index === -1) return { ok: false, error: 'Producto no encontrado' };
+
+        const producto = this.productos[index];
+        let nuevoStock = producto.stock_actual;
 
         if (tipo === 'SALIDA') {
             if (cantidad > producto.stock_actual) {
-                return {
-                    ok: false,
-                    error: `Stock insuficiente. Disponible: ${producto.stock_actual}, Solicitado: ${cantidad}`
-                };
+                return { ok: false, error: `Stock insuficiente. Disponible: ${producto.stock_actual}, Solicitado: ${cantidad}` };
             }
-            producto.stock_actual = Math.round((producto.stock_actual - cantidad) * 100) / 100;
+            nuevoStock = Math.round((producto.stock_actual - cantidad) * 100) / 100;
         } else {
-            producto.stock_actual = Math.round((producto.stock_actual + cantidad) * 100) / 100;
+            nuevoStock = Math.round((producto.stock_actual + cantidad) * 100) / 100;
         }
 
-        this.setProductos(productos);
+        const updates = {};
+        updates[`/productos/${index}/stock_actual`] = nuevoStock;
 
-        // Registrar en historial
-        const movimientos = this.getMovimientos();
-        movimientos.unshift({
+        const movRef = push(ref(database, 'movimientos'));
+        const movData = {
             id: Date.now(),
             producto_id: productoId,
             referencia: producto.referencia,
@@ -94,84 +128,44 @@ const DB = {
             observaciones: observaciones || null,
             usuario: 'Admin',
             fecha: new Date().toISOString()
-        });
-        this.setMovimientos(movimientos);
-
-        return { ok: true, nuevo_stock: producto.stock_actual };
-    },
-
-    // ── Actualizar producto ──
-    updateProducto(productoId, field, value) {
-        const productos = this.getProductos();
-        const p = productos.find(pr => pr.id === productoId);
-        if (p) {
-            p[field] = parseFloat(value) || 0;
-            this.setProductos(productos);
-            return true;
-        }
-        return false;
-    },
-
-    // ── Stats ──
-    getStats() {
-        const productos = this.getProductos();
-        const hoy = new Date().toISOString().slice(0, 10);
-        const movimientos = this.getMovimientos();
-
-        const total = productos.filter(p => p.activo !== false).length;
-        const alerta_bajo = productos.filter(p => p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo).length;
-        const alerta_alto = productos.filter(p => p.stock_maximo > 0 && p.stock_actual >= p.stock_maximo).length;
-        const stock_ok = total - alerta_bajo - alerta_alto;
-        const mov_hoy = movimientos.filter(m => m.fecha && m.fecha.slice(0, 10) === hoy).length;
-
-        return { total_productos: total, alerta_bajo, alerta_alto, stock_ok, movimientos_hoy: mov_hoy };
-    },
-
-    // ── Categorías únicas ──
-    getCategorias() {
-        const productos = this.getProductos();
-        return [...new Set(productos.map(p => p.categoria))].sort();
-    },
-
-    // ── Exportar todo (backup) ──
-    exportBackup() {
-        const data = {
-            version: '1.0',
-            fecha: new Date().toISOString(),
-            productos: this.getProductos(),
-            movimientos: this.getMovimientos()
         };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `inventario_backup_${new Date().toISOString().slice(0, 10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        localStorage.setItem(this.KEYS.LAST_BACKUP, new Date().toISOString());
-    },
+        updates[`/movimientos/${movRef.key}`] = movData;
 
-    // ── Importar backup ──
-    importBackup(jsonData) {
         try {
-            const data = JSON.parse(jsonData);
-            if (!data.productos || !Array.isArray(data.productos)) {
-                throw new Error('Formato inválido: falta array de productos');
-            }
-            this.setProductos(data.productos);
-            if (data.movimientos) this.setMovimientos(data.movimientos);
-            this.setInitialized();
-            return { ok: true, count: data.productos.length };
-        } catch (err) {
+            await update(ref(database), updates);
+            return { ok: true, nuevo_stock: nuevoStock };
+        } catch(err) {
             return { ok: false, error: err.message };
         }
     },
 
-    getLastBackup() {
-        return localStorage.getItem(this.KEYS.LAST_BACKUP);
+    async updateProducto(productoId, field, value) {
+        const index = this.productos.findIndex(pr => pr.id === productoId);
+        if (index !== -1) {
+            try {
+                await set(ref(database, `productos/${index}/${field}`), parseFloat(value) || 0);
+                return true;
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        return false;
+    },
+
+    getStats() {
+        const hoy = new Date().toISOString().slice(0, 10);
+        const total = this.productos.filter(p => p.activo !== false).length;
+        const alerta_bajo = this.productos.filter(p => p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo).length;
+        const alerta_alto = this.productos.filter(p => p.stock_maximo > 0 && p.stock_actual >= p.stock_maximo).length;
+        const stock_ok = total - alerta_bajo - alerta_alto;
+        const mov_hoy = this.movimientos.filter(m => m.fecha && m.fecha.slice(0, 10) === hoy).length;
+        return { total_productos: total, alerta_bajo, alerta_alto, stock_ok, movimientos_hoy: mov_hoy };
+    },
+
+    getCategorias() {
+        return [...new Set(this.productos.map(p => p.categoria))].sort();
     }
 };
-
 
 // ══════════════════════════════════════════════
 // Estado de la app
@@ -179,29 +173,24 @@ const DB = {
 const state = {
     currentView: 'dashboard',
     filters: {
-        categoria: '',
-        busqueda: '',
-        movTipo: '',
-        movBusqueda: '',
-        movFechaDesde: '',
-        movFechaHasta: '',
-        movPage: 0,
-        movPerPage: 30
+        categoria: '', busqueda: '',
+        movTipo: '', movBusqueda: '', movFechaDesde: '', movFechaHasta: '',
+        movPage: 0, movPerPage: 30
     },
     selectedProducto: null
 };
-
 
 // ══════════════════════════════════════════════
 // Inicialización
 // ══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+    showToast('Conectando a Firebase...', 'info');
     await DB.initialize();
+    showToast('✅ Conectado y sincronizado', 'success');
     renderDashboard();
     setupNavigation();
     setupModalEvents();
     setupSearchDebounce();
-    updateBackupInfo();
 });
 
 function renderDashboard() {
@@ -211,7 +200,6 @@ function renderDashboard() {
     renderAlerts();
     updateAlertBadge();
 }
-
 
 // ══════════════════════════════════════════════
 // Navegación SPA
@@ -232,7 +220,6 @@ function switchView(view) {
     if (view === 'historial') renderMovimientosTable();
     else if (view === 'dashboard') renderDashboard();
 }
-
 
 // ══════════════════════════════════════════════
 // Dashboard: Stats
@@ -275,7 +262,6 @@ function updateAlertBadge() {
     badge.style.display = count > 0 ? 'inline' : 'none';
 }
 
-
 // ══════════════════════════════════════════════
 // Dashboard: Categoría filter
 // ══════════════════════════════════════════════
@@ -285,7 +271,6 @@ function renderCategoriaFilter() {
     select.innerHTML = '<option value="">Todas las categorías</option>' +
         cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
 }
-
 
 // ══════════════════════════════════════════════
 // Dashboard: Tabla de productos
@@ -315,8 +300,8 @@ function renderProductosTable() {
             <td class="hide-tablet">${esc(p.medida || '—')}</td>
             <td class="hide-tablet">${esc(p.calibre || '—')}</td>
             <td class="stock-val" style="color:${getStockColor(p)}">${p.stock_actual}</td>
-            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_minimo}" min="0" step="1" onchange="updateProductField(${p.id},'stock_minimo',this.value)" title="Stock Mínimo"></div></td>
-            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_maximo}" min="0" step="1" onchange="updateProductField(${p.id},'stock_maximo',this.value)" title="Stock Máximo"></div></td>
+            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_minimo}" min="0" step="1" onchange="window.updateProductField(${p.id},'stock_minimo',this.value)" title="Stock Mínimo"></div></td>
+            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_maximo}" min="0" step="1" onchange="window.updateProductField(${p.id},'stock_maximo',this.value)" title="Stock Máximo"></div></td>
             <td>${renderStatusBadge(p)}</td>
         </tr>
     `).join('');
@@ -337,14 +322,12 @@ function renderStatusBadge(p) {
     return '<span class="status-badge ok">🟢 Normal</span>';
 }
 
-
 // ══════════════════════════════════════════════
 // Historial: Tabla de movimientos
 // ══════════════════════════════════════════════
 function renderMovimientosTable() {
     let movimientos = DB.getMovimientos();
 
-    // Filtros
     if (state.filters.movTipo) movimientos = movimientos.filter(m => m.tipo === state.filters.movTipo);
     if (state.filters.movBusqueda) {
         const q = state.filters.movBusqueda.toLowerCase();
@@ -393,7 +376,6 @@ function renderMovimientosTable() {
     }
 }
 
-
 // ══════════════════════════════════════════════
 // Modales
 // ══════════════════════════════════════════════
@@ -426,7 +408,6 @@ function openMovimientoModal(tipo) {
     openModal('modal-movimiento');
     setTimeout(() => document.getElementById('mov-producto-search').focus(), 100);
 }
-
 
 // ══════════════════════════════════════════════
 // Autocomplete
@@ -483,12 +464,14 @@ function selectProductForMovement(producto) {
     document.getElementById('mov-stock-display').textContent = `${producto.stock_actual} ${producto.unidad}`;
 }
 
-
 // ══════════════════════════════════════════════
 // Registrar movimiento
 // ══════════════════════════════════════════════
-function submitMovimiento(e) {
+async function submitMovimiento(e) {
     e.preventDefault();
+    const btn = document.getElementById('mov-submit-btn');
+    btn.disabled = true;
+
     const productoId = parseInt(document.getElementById('mov-producto-id').value);
     const tipo = document.getElementById('mov-tipo').value;
     const cantidad = parseFloat(document.getElementById('mov-cantidad').value);
@@ -496,11 +479,11 @@ function submitMovimiento(e) {
     const contacto = document.getElementById('mov-contacto').value.trim();
     const observaciones = document.getElementById('mov-observaciones').value.trim();
 
-    if (!productoId) { showToast('Selecciona un producto', 'error'); return; }
-    if (!cantidad || cantidad <= 0) { showToast('La cantidad debe ser mayor a 0', 'error'); return; }
-    if (tipo === 'SALIDA' && !remision) { showToast('El Nº de remisión es obligatorio para salidas', 'error'); return; }
+    if (!productoId) { showToast('Selecciona un producto', 'error'); btn.disabled = false; return; }
+    if (!cantidad || cantidad <= 0) { showToast('La cantidad debe ser mayor a 0', 'error'); btn.disabled = false; return; }
+    if (tipo === 'SALIDA' && !remision) { showToast('El Nº de remisión es obligatorio para salidas', 'error'); btn.disabled = false; return; }
 
-    const result = DB.registrarMovimiento(
+    const result = await DB.registrarMovimiento(
         productoId, tipo, cantidad, remision,
         tipo === 'SALIDA' ? contacto : null,
         tipo === 'ENTRADA' ? contacto : null,
@@ -510,22 +493,19 @@ function submitMovimiento(e) {
     if (result.ok) {
         showToast(`${tipo === 'ENTRADA' ? '📥' : '📤'} Registrado — Nuevo stock: ${result.nuevo_stock}`, 'success');
         closeAllModals();
-        renderDashboard();
     } else {
         showToast(result.error, 'error');
     }
+    btn.disabled = false;
 }
-
 
 // ══════════════════════════════════════════════
 // Editar producto inline
 // ══════════════════════════════════════════════
-function updateProductField(productoId, field, value) {
-    DB.updateProducto(productoId, field, value);
+async function updateProductField(productoId, field, value) {
+    await DB.updateProducto(productoId, field, value);
     showToast(`${field === 'stock_minimo' ? 'Mínimo' : 'Máximo'} actualizado`, 'success');
-    renderDashboard();
 }
-
 
 // ══════════════════════════════════════════════
 // Filtros
@@ -537,7 +517,6 @@ function setupSearchDebounce() {
 }
 
 function filterByCategoria(value) { state.filters.categoria = value; renderProductosTable(); }
-
 function filterMovimientos() {
     state.filters.movTipo = document.getElementById('mov-filter-tipo')?.value || '';
     state.filters.movBusqueda = document.getElementById('mov-filter-busqueda')?.value || '';
@@ -550,59 +529,25 @@ function filterMovimientos() {
 function movPagPrev() { state.filters.movPage = Math.max(0, state.filters.movPage - 1); renderMovimientosTable(); }
 function movPagNext() { state.filters.movPage++; renderMovimientosTable(); }
 
-
 // ══════════════════════════════════════════════
-// Backup / Restaurar
+// Backup / Restaurar (Modificado para Firebase)
 // ══════════════════════════════════════════════
 function exportarBackup() {
-    DB.exportBackup();
-    showToast('💾 Backup descargado', 'success');
-    updateBackupInfo();
-}
-
-function importarBackup() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const result = DB.importBackup(ev.target.result);
-            if (result.ok) {
-                showToast(`✅ Backup restaurado: ${result.count} productos`, 'success');
-                renderDashboard();
-                updateBackupInfo();
-            } else {
-                showToast('❌ Error: ' + result.error, 'error');
-            }
-        };
-        reader.readAsText(file);
+    const data = {
+        version: '2.0-Firebase',
+        fecha: new Date().toISOString(),
+        productos: DB.getProductos(),
+        movimientos: DB.getMovimientos()
     };
-    input.click();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventario_backup_firebase_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('💾 Backup de Firebase descargado', 'success');
 }
-
-function updateBackupInfo() {
-    const last = DB.getLastBackup();
-    const el = document.getElementById('last-backup-date');
-    if (el) {
-        el.textContent = last ? formatDate(last) : 'Nunca';
-    }
-}
-
-function resetearDatos() {
-    if (confirm('⚠️ ¿Estás seguro? Esto borrará TODOS los datos de inventario y movimientos.\n\nSe recomienda hacer un backup primero.')) {
-        if (confirm('🔴 CONFIRMAR: Se perderán todos los datos. ¿Continuar?')) {
-            localStorage.removeItem(DB.KEYS.PRODUCTOS);
-            localStorage.removeItem(DB.KEYS.MOVIMIENTOS);
-            localStorage.removeItem(DB.KEYS.INITIALIZED);
-            localStorage.removeItem(DB.KEYS.LAST_BACKUP);
-            location.reload();
-        }
-    }
-}
-
 
 // ══════════════════════════════════════════════
 // Toast
@@ -616,7 +561,6 @@ function showToast(message, type = 'info') {
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
 }
-
 
 // ══════════════════════════════════════════════
 // Utilidades
@@ -637,3 +581,16 @@ function formatDate(dateStr) {
         });
     } catch { return dateStr; }
 }
+
+// ══════════════════════════════════════════════
+// Exportar funciones globales para HTML inline event handlers
+// ══════════════════════════════════════════════
+window.filterByCategoria = filterByCategoria;
+window.openMovimientoModal = openMovimientoModal;
+window.submitMovimiento = submitMovimiento;
+window.closeAllModals = closeAllModals;
+window.updateProductField = updateProductField;
+window.filterMovimientos = filterMovimientos;
+window.movPagPrev = movPagPrev;
+window.movPagNext = movPagNext;
+window.exportarBackup = exportarBackup;
