@@ -206,7 +206,7 @@ function renderDashboard() {
 // Navegación SPA
 // ══════════════════════════════════════════════
 function setupNavigation() {
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+    document.querySelectorAll('.nav-btn[data-view]').forEach(btn => {
         btn.addEventListener('click', () => switchView(btn.dataset.view));
     });
 }
