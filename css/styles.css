@@ -49,6 +49,28 @@
     --radius-xl: 20px;
     --transition-fast: 0.15s ease;
     --transition-normal: 0.3s ease;
+    --bg-header: rgba(10, 14, 23, 0.85);
+    --bg-table-header: rgba(30, 41, 59, 0.5);
+    --border-table: rgba(99, 102, 241, 0.06);
+}
+
+[data-theme="light"] {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-card: rgba(255, 255, 255, 0.9);
+    --bg-glass: rgba(255, 255, 255, 0.7);
+    --bg-input: #ffffff;
+    --border-color: rgba(99, 102, 241, 0.2);
+    --border-glow: rgba(99, 102, 241, 0.4);
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --bg-header: rgba(255, 255, 255, 0.85);
+    --bg-table-header: rgba(241, 245, 249, 0.8);
+    --border-table: rgba(99, 102, 241, 0.15);
+    --color-ok-bg: rgba(34, 197, 94, 0.15);
+    --color-warning-bg: rgba(245, 158, 11, 0.15);
+    --color-danger-bg: rgba(239, 68, 68, 0.15);
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -75,7 +97,7 @@ body::before {
 /* ── Header ── */
 .header {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(10,14,23,0.85);
+    background: var(--bg-header);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-color);
     padding: 0 1.5rem;
@@ -216,12 +238,12 @@ body::before {
 .data-table thead th {
     padding: 14px 16px; text-align: left; font-size: 0.75rem; font-weight: 600;
     text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);
-    background: rgba(30,41,59,0.5); border-bottom: 1px solid var(--border-color);
+    background: var(--bg-table-header); border-bottom: 1px solid var(--border-color);
     white-space: nowrap; cursor: pointer; user-select: none; transition: color var(--transition-fast);
 }
 .data-table thead th:hover { color: var(--accent-primary); }
 .data-table tbody tr {
-    border-bottom: 1px solid rgba(99,102,241,0.06); transition: background var(--transition-fast);
+    border-bottom: 1px solid var(--border-table); transition: background var(--transition-fast);
 }
 .data-table tbody tr:hover { background: rgba(99,102,241,0.04); }
 .data-table tbody tr:last-child { border-bottom: none; }
@@ -325,7 +347,7 @@ select.form-control option { background: var(--bg-secondary); color: var(--text-
 .autocomplete-list.show { display: block; }
 .autocomplete-item {
     padding: 10px 14px; cursor: pointer; font-size: 0.85rem;
-    border-bottom: 1px solid rgba(99,102,241,0.06); transition: background var(--transition-fast);
+    border-bottom: 1px solid var(--border-table); transition: background var(--transition-fast);
 }
 .autocomplete-item:hover, .autocomplete-item.selected { background: rgba(99,102,241,0.1); }
 .autocomplete-item .ac-ref { font-weight: 600; color: var(--text-primary); }

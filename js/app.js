@@ -184,6 +184,7 @@ const state = {
 // Inicialización
 // ══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+    initTheme();
     showToast('Conectando a Firebase...', 'info');
     await DB.initialize();
     showToast('✅ Conectado y sincronizado', 'success');
@@ -583,6 +584,30 @@ function formatDate(dateStr) {
 }
 
 // ══════════════════════════════════════════════
+// Tema Claro / Oscuro
+// ══════════════════════════════════════════════
+function initTheme() {
+    const savedTheme = localStorage.getItem('pcl15_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('pcl15_theme', newTheme);
+    updateThemeIcon(newTheme);
+}
+
+function updateThemeIcon(theme) {
+    const icon = document.getElementById('theme-icon');
+    if (icon) {
+        icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+}
+
+// ══════════════════════════════════════════════
 // Exportar funciones globales para HTML inline event handlers
 // ══════════════════════════════════════════════
 window.filterByCategoria = filterByCategoria;
@@ -594,3 +619,4 @@ window.filterMovimientos = filterMovimientos;
 window.movPagPrev = movPagPrev;
 window.movPagNext = movPagNext;
 window.exportarBackup = exportarBackup;
+window.toggleTheme = toggleTheme;
