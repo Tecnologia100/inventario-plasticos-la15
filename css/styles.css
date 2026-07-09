@@ -409,9 +409,9 @@ select.form-control option { background: var(--bg-secondary); color: var(--text-
 
 /* ── Inline edit ── */
 .inline-edit input {
-    width: 70px; padding: 4px 8px; background: var(--bg-input);
+    width: 85px; padding: 4px 4px; background: var(--bg-input);
     border: 1px solid transparent; border-radius: 4px; color: var(--text-primary);
-    font-family: inherit; font-size: 0.85rem; text-align: center;
+    font-family: inherit; font-size: 0.82rem; text-align: center;
     font-variant-numeric: tabular-nums; transition: all var(--transition-fast);
 }
 .inline-edit input:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 2px var(--accent-primary-glow); }
