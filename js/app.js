@@ -550,6 +550,38 @@ function exportarBackup() {
     showToast('💾 Backup de Firebase descargado', 'success');
 }
 
+function exportarExcel() {
+    const productos = DB.getProductos().filter(p => p !== null);
+    if (productos.length === 0) {
+        showToast('No hay productos para exportar', 'error');
+        return;
+    }
+    
+    // Create CSV content with BOM for Excel UTF-8 compatibility
+    const BOM = "\uFEFF";
+    let csvContent = BOM + "Referencia;Medida;Categoría;Stock Mínimo;Stock Máximo;Stock Actual\n";
+    
+    productos.forEach(p => {
+        const ref = (p.referencia || "").replace(/;/g, ",");
+        const med = (p.medida || "").replace(/;/g, ",");
+        const cat = (p.categoria || "").replace(/;/g, ",");
+        const min = p.stock_minimo || 0;
+        const max = p.stock_maximo || 0;
+        const actual = p.stock_actual || 0;
+        
+        csvContent += `${ref};${med};${cat};${min};${max};${actual}\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Inventario_La15_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📊 Inventario exportado a Excel exitosamente', 'success');
+}
+
 // ══════════════════════════════════════════════
 // Toast
 // ══════════════════════════════════════════════
@@ -618,5 +650,7 @@ window.updateProductField = updateProductField;
 window.filterMovimientos = filterMovimientos;
 window.movPagPrev = movPagPrev;
 window.movPagNext = movPagNext;
+window.renderMovimientosTable = renderMovimientosTable;
 window.exportarBackup = exportarBackup;
+window.exportarExcel = exportarExcel;
 window.toggleTheme = toggleTheme;

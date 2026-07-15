@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Plásticos La 15 — Inventario</title>
-    <link rel="stylesheet" href="css/styles.css?v=3">
+    <link rel="stylesheet" href="css/styles.css?v=4">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏭</text></svg>">
 </head>
 <body>
@@ -52,10 +52,11 @@
             <!-- Backup bar -->
             <div class="backup-bar">
                 <div class="backup-info">
-                    💾 Último backup: <strong id="last-backup-date">Nunca</strong>
+                    ☁️ Datos sincronizados automáticamente en la nube.
                 </div>
                 <div class="backup-actions">
-                    <button class="btn btn-backup btn-sm" onclick="exportarBackup()">📥 Descargar Backup</button>
+                    <button class="btn btn-entrada btn-sm" onclick="exportarExcel()">📊 Exportar a Excel</button>
+                    <button class="btn btn-backup btn-sm" onclick="exportarBackup()">📥 Backup (JSON)</button>
                 </div>
             </div>
 
