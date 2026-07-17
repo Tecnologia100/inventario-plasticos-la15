@@ -290,7 +290,7 @@ function renderProductosTable() {
 
     const tbody = document.getElementById('productos-tbody');
     if (productos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📦</div><p>No se encontraron productos</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📦</div><p>No se encontraron productos</p></div></td></tr>`;
         return;
     }
 
@@ -298,8 +298,6 @@ function renderProductosTable() {
         <tr>
             <td class="ref">${esc(p.referencia)}</td>
             <td><span class="cat-badge">${esc(p.categoria)}</span></td>
-            <td class="hide-tablet">${esc(p.medida || '—')}</td>
-            <td class="hide-tablet">${esc(p.calibre || '—')}</td>
             <td class="stock-val" style="color:${getStockColor(p)}">${p.stock_actual}</td>
             <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_minimo}" min="0" step="1" onchange="window.updateProductField(${p.id},'stock_minimo',this.value)" title="Stock Mínimo"></div></td>
             <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_maximo}" min="0" step="1" onchange="window.updateProductField(${p.id},'stock_maximo',this.value)" title="Stock Máximo"></div></td>
@@ -559,17 +557,16 @@ function exportarExcel() {
     
     // Create CSV content with BOM for Excel UTF-8 compatibility
     const BOM = "\uFEFF";
-    let csvContent = BOM + "Referencia;Medida;Categoría;Stock Mínimo;Stock Máximo;Stock Actual\n";
+    let csvContent = BOM + "Referencia;Categoría;Stock Mínimo;Stock Máximo;Stock Actual\n";
     
     productos.forEach(p => {
         const ref = (p.referencia || "").replace(/;/g, ",");
-        const med = (p.medida || "").replace(/;/g, ",");
         const cat = (p.categoria || "").replace(/;/g, ",");
         const min = p.stock_minimo || 0;
         const max = p.stock_maximo || 0;
         const actual = p.stock_actual || 0;
         
-        csvContent += `${ref};${med};${cat};${min};${max};${actual}\n`;
+        csvContent += `${ref};${cat};${min};${max};${actual}\n`;
     });
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
