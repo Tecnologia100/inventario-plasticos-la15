@@ -437,8 +437,11 @@ function setupAutocomplete(inputId, listId, onSelect) {
         `).join('');
         list.classList.add('show');
         list.querySelectorAll('.autocomplete-item').forEach(item => {
+            item.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // Evita que el input pierda el foco al hacer clic
+            });
             item.addEventListener('click', () => {
-                const prod = productos.find(p => p.id === parseInt(item.dataset.id));
+                const prod = productos.find(p => String(p.id) === String(item.dataset.id));
                 if (prod) onSelect(prod);
                 list.classList.remove('show');
             });
