@@ -62,27 +62,27 @@
 
             <!-- Stats -->
             <div class="stats-grid">
-                <div class="stat-card accent">
+                <div class="stat-card accent" onclick="filterByCard('total', this)">
                     <div class="stat-icon">📦</div>
                     <div class="stat-value" id="stat-total">0</div>
                     <div class="stat-label">Total Productos</div>
                 </div>
-                <div class="stat-card ok">
+                <div class="stat-card ok" onclick="filterByCard('ok', this)">
                     <div class="stat-icon">✅</div>
                     <div class="stat-value" id="stat-ok">0</div>
                     <div class="stat-label">Stock Normal</div>
                 </div>
-                <div class="stat-card danger">
+                <div class="stat-card danger" onclick="filterByCard('bajo', this)">
                     <div class="stat-icon">🔴</div>
                     <div class="stat-value" id="stat-bajo">0</div>
                     <div class="stat-label">Stock Bajo</div>
                 </div>
-                <div class="stat-card warning">
+                <div class="stat-card warning" onclick="filterByCard('alto', this)">
                     <div class="stat-icon">🟠</div>
                     <div class="stat-value" id="stat-alto">0</div>
                     <div class="stat-label">Sobre-stock</div>
                 </div>
-                <div class="stat-card info">
+                <div class="stat-card info" onclick="filterByCard('mov_hoy', this)">
                     <div class="stat-icon">📝</div>
                     <div class="stat-value" id="stat-mov-hoy">0</div>
                     <div class="stat-label">Movimientos Hoy</div>

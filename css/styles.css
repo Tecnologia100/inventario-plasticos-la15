@@ -162,7 +162,33 @@ body::before {
     background: var(--bg-glass); backdrop-filter: blur(12px);
     border: 1px solid var(--border-color); border-radius: var(--radius-md);
     padding: 1.25rem; transition: all var(--transition-normal);
-    position: relative; overflow: hidden;
+    position: relative; overflow: hidden; cursor: pointer;
+}
+.stat-card.active {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+    background: rgba(99, 102, 241, 0.05);
+    transform: translateY(-2px);
+}
+.stat-card.active.ok {
+    border-color: var(--color-ok);
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.25);
+    background: rgba(34, 197, 94, 0.05);
+}
+.stat-card.active.danger {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.05);
+}
+.stat-card.active.warning {
+    border-color: var(--color-overstock);
+    box-shadow: 0 0 12px rgba(249, 115, 22, 0.25);
+    background: rgba(249, 115, 22, 0.05);
+}
+.stat-card.active.info {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+    background: rgba(99, 102, 241, 0.05);
 }
 .stat-card::after {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;

@@ -174,6 +174,7 @@ const state = {
     currentView: 'dashboard',
     filters: {
         categoria: '', busqueda: '',
+        cardFilter: '',
         movTipo: '', movBusqueda: '', movFechaDesde: '', movFechaHasta: '',
         movPage: 0, movPerPage: 30
     },
@@ -276,6 +277,32 @@ function renderCategoriaFilter() {
 // ══════════════════════════════════════════════
 // Dashboard: Tabla de productos
 // ══════════════════════════════════════════════
+function applyCardFilter(productos) {
+    if (state.filters.cardFilter) {
+        const card = state.filters.cardFilter;
+        if (card === 'ok') {
+            productos = productos.filter(p => {
+                const isBajo = p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo;
+                const isAlto = p.stock_maximo > 0 && p.stock_actual >= p.stock_maximo;
+                return !isBajo && !isAlto;
+            });
+        } else if (card === 'bajo') {
+            productos = productos.filter(p => p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo);
+        } else if (card === 'alto') {
+            productos = productos.filter(p => p.stock_maximo > 0 && p.stock_actual >= p.stock_maximo);
+        } else if (card === 'mov_hoy') {
+            const hoy = new Date().toISOString().slice(0, 10);
+            const productIdsMovHoy = new Set(
+                DB.getMovimientos()
+                    .filter(m => m.fecha && m.fecha.slice(0, 10) === hoy)
+                    .map(m => m.producto_id)
+            );
+            productos = productos.filter(p => productIdsMovHoy.has(p.id));
+        }
+    }
+    return productos;
+}
+
 function renderProductosTable() {
     let productos = DB.getProductos().filter(p => p.activo !== false);
     if (state.filters.categoria) productos = productos.filter(p => p.categoria === state.filters.categoria);
@@ -287,6 +314,7 @@ function renderProductosTable() {
             p.categoria.toLowerCase().includes(q)
         );
     }
+    productos = applyCardFilter(productos);
 
     const tbody = document.getElementById('productos-tbody');
     if (productos.length === 0) {
@@ -529,6 +557,21 @@ function setupSearchDebounce() {
 }
 
 function filterByCategoria(value) { state.filters.categoria = value; renderProductosTable(); }
+
+function filterByCard(type, element) {
+    if (state.filters.cardFilter === type) {
+        state.filters.cardFilter = '';
+    } else {
+        state.filters.cardFilter = type;
+    }
+    
+    document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
+    if (state.filters.cardFilter && element) {
+        element.classList.add('active');
+    }
+    
+    renderProductosTable();
+}
 function filterMovimientos() {
     state.filters.movTipo = document.getElementById('mov-filter-tipo')?.value || '';
     state.filters.movBusqueda = document.getElementById('mov-filter-busqueda')?.value || '';
@@ -562,9 +605,20 @@ function exportarBackup() {
 }
 
 function exportarExcel() {
-    const productos = DB.getProductos().filter(p => p !== null);
+    let productos = DB.getProductos().filter(p => p !== null && p.activo !== false);
+    if (state.filters.categoria) productos = productos.filter(p => p.categoria === state.filters.categoria);
+    if (state.filters.busqueda) {
+        const q = state.filters.busqueda.toLowerCase();
+        productos = productos.filter(p =>
+            p.referencia.toLowerCase().includes(q) ||
+            (p.medida && p.medida.toLowerCase().includes(q)) ||
+            p.categoria.toLowerCase().includes(q)
+        );
+    }
+    productos = applyCardFilter(productos);
+
     if (productos.length === 0) {
-        showToast('No hay productos para exportar', 'error');
+        showToast('No hay productos para exportar con los filtros seleccionados', 'error');
         return;
     }
     
@@ -664,3 +718,4 @@ window.renderMovimientosTable = renderMovimientosTable;
 window.exportarBackup = exportarBackup;
 window.exportarExcel = exportarExcel;
 window.toggleTheme = toggleTheme;
+window.filterByCard = filterByCard;
