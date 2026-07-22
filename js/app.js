@@ -41,9 +41,7 @@ const DB = {
             onValue(ref(database, 'productos'), async (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    this.productos = Array.isArray(data) 
-                        ? data.map((p, i) => p ? { ...p, id: p.id !== undefined ? p.id : i } : null).filter(Boolean) 
-                        : Object.entries(data).map(([k, v]) => ({ ...v, id: v.id !== undefined ? v.id : k }));
+                    this.productos = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
                 } else {
                     await this.loadInitialData();
                 }
@@ -100,36 +98,8 @@ const DB = {
         let producto = typeof productoOrId === 'object' ? productoOrId : this.productos.find(p => String(p.id) === String(productoOrId));
         if (!producto) return { ok: false, error: 'Producto no encontrado localmente' };
         
-        const productoId = producto.id;
-
-        // Find the real Firebase index by looking up in the raw snapshot
-        const snapshot = await new Promise(resolve => {
-            onValue(ref(database, 'productos'), resolve, { onlyOnce: true });
-        });
-        const rawData = snapshot.val();
-        let firebaseIndex = -1;
-        if (Array.isArray(rawData)) {
-            firebaseIndex = rawData.findIndex(p => p && String(p.id) === String(productoId));
-            if (firebaseIndex === -1) {
-                firebaseIndex = rawData.findIndex(p => p && p.referencia === producto.referencia);
-            }
-        } else if (rawData) {
-            for (const [key, val] of Object.entries(rawData)) {
-                if (val && String(val.id) === String(productoId)) {
-                    firebaseIndex = key;
-                    break;
-                }
-            }
-            if (firebaseIndex === -1) {
-                for (const [key, val] of Object.entries(rawData)) {
-                    if (val && val.referencia === producto.referencia) {
-                        firebaseIndex = key;
-                        break;
-                    }
-                }
-            }
-        }
-        if (firebaseIndex === -1) return { ok: false, error: 'Producto no encontrado en Firebase (ni por ID ni Referencia)' };
+        // Since we injected the Firebase key/index into producto.id during load, we can use it directly!
+        const firebaseIndex = producto.id;
 
         let nuevoStock = producto.stock_actual;
 
@@ -148,7 +118,7 @@ const DB = {
         const movRef = push(ref(database, 'movimientos'));
         const movData = {
             id: Date.now(),
-            producto_id: productoId,
+            producto_id: producto.id,
             referencia: producto.referencia,
             categoria: producto.categoria,
             medida: producto.medida,
@@ -172,10 +142,10 @@ const DB = {
     },
 
     async updateProducto(productoId, field, value) {
-        const index = this.productos.findIndex(pr => String(pr.id) === String(productoId));
-        if (index !== -1) {
+        const producto = this.productos.find(pr => String(pr.id) === String(productoId));
+        if (producto) {
             try {
-                await set(ref(database, `productos/${index}/${field}`), parseFloat(value) || 0);
+                await set(ref(database, `productos/${producto.id}/${field}`), parseFloat(value) || 0);
                 return true;
             } catch(e) {
                 console.error(e);
@@ -529,7 +499,7 @@ function selectProductForMovement(producto) {
     document.getElementById('mov-producto-search').value = `${producto.referencia} — ${producto.categoria}`;
     document.getElementById('mov-producto-id').value = producto.id;
     document.getElementById('mov-stock-info').style.display = 'flex';
-    document.getElementById('mov-stock-display').textContent = `${producto.stock_actual} ${producto.unidad || 'Und'}`;
+    document.getElementById('mov-stock-display').textContent = `${producto.stock_actual} ${producto.unidad}`;
 }
 
 // ══════════════════════════════════════════════
@@ -540,19 +510,19 @@ async function submitMovimiento(e) {
     const btn = document.getElementById('mov-submit-btn');
     btn.disabled = true;
 
-    const producto = state.selectedProducto;
+    const productoId = parseInt(document.getElementById('mov-producto-id').value);
     const tipo = document.getElementById('mov-tipo').value;
     const cantidad = parseFloat(document.getElementById('mov-cantidad').value);
     const remision = document.getElementById('mov-remision').value.trim();
     const contacto = document.getElementById('mov-contacto').value.trim();
     const observaciones = document.getElementById('mov-observaciones').value.trim();
 
-    if (!producto) { showToast('Selecciona un producto de la lista', 'error'); btn.disabled = false; return; }
+    if (!productoId) { showToast('Selecciona un producto', 'error'); btn.disabled = false; return; }
     if (!cantidad || cantidad <= 0) { showToast('La cantidad debe ser mayor a 0', 'error'); btn.disabled = false; return; }
     if (tipo === 'SALIDA' && !remision) { showToast('El Nº de remisión es obligatorio para salidas', 'error'); btn.disabled = false; return; }
 
     const result = await DB.registrarMovimiento(
-        producto, tipo, cantidad, remision,
+        productoId, tipo, cantidad, remision,
         tipo === 'SALIDA' ? contacto : null,
         tipo === 'ENTRADA' ? contacto : null,
         observaciones
