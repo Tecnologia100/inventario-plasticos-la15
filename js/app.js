@@ -438,12 +438,22 @@ function setupAutocomplete(inputId, listId, onSelect) {
         list.classList.add('show');
         list.querySelectorAll('.autocomplete-item').forEach(item => {
             item.addEventListener('mousedown', (e) => {
-                e.preventDefault(); // Evita que el input pierda el foco al hacer clic
+                e.preventDefault(); // Evita que el input pierda el foco al hacer clic en PC
             });
-            item.addEventListener('click', () => {
+
+            const selectProduct = () => {
                 const prod = productos.find(p => String(p.id) === String(item.dataset.id));
                 if (prod) onSelect(prod);
                 list.classList.remove('show');
+            };
+
+            item.addEventListener('touchend', (e) => {
+                e.preventDefault(); // Selecciona instantáneamente en móviles y evita el delay o cierre por redimensionamiento del teclado
+                selectProduct();
+            });
+
+            item.addEventListener('click', () => {
+                selectProduct();
             });
         });
     });
