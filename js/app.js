@@ -41,7 +41,9 @@ const DB = {
             onValue(ref(database, 'productos'), async (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    this.productos = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
+                    this.productos = Array.isArray(data) 
+                        ? data.map((p, i) => p ? { ...p, id: p.id !== undefined ? p.id : i } : null).filter(Boolean) 
+                        : Object.entries(data).map(([k, v]) => ({ ...v, id: v.id !== undefined ? v.id : k }));
                 } else {
                     await this.loadInitialData();
                 }
@@ -118,12 +120,12 @@ const DB = {
         const movRef = push(ref(database, 'movimientos'));
         const movData = {
             id: Date.now(),
-            producto_id: producto.id,
-            referencia: producto.referencia,
-            categoria: producto.categoria,
-            medida: producto.medida,
-            tipo: tipo,
-            cantidad: cantidad,
+            producto_id: producto.id !== undefined ? producto.id : '',
+            referencia: producto.referencia || '',
+            categoria: producto.categoria || '',
+            medida: producto.medida || '',
+            tipo: tipo || '',
+            cantidad: cantidad || 0,
             remision: remision || null,
             cliente: cliente || null,
             proveedor: proveedor || null,
