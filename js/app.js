@@ -497,7 +497,7 @@ function selectProductForMovement(producto) {
     document.getElementById('mov-producto-search').value = `${producto.referencia} — ${producto.categoria}`;
     document.getElementById('mov-producto-id').value = producto.id;
     document.getElementById('mov-stock-info').style.display = 'flex';
-    document.getElementById('mov-stock-display').textContent = `${producto.stock_actual} ${producto.unidad}`;
+    document.getElementById('mov-stock-display').textContent = `${producto.stock_actual} ${producto.unidad || 'Und'}`;
 }
 
 // ══════════════════════════════════════════════
@@ -508,7 +508,7 @@ async function submitMovimiento(e) {
     const btn = document.getElementById('mov-submit-btn');
     btn.disabled = true;
 
-    const productoId = parseInt(document.getElementById('mov-producto-id').value);
+    const productoId = document.getElementById('mov-producto-id').value;
     const tipo = document.getElementById('mov-tipo').value;
     const cantidad = parseFloat(document.getElementById('mov-cantidad').value);
     const remision = document.getElementById('mov-remision').value.trim();
