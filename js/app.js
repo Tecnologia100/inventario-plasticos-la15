@@ -422,7 +422,7 @@ function closeAllModals() {
     state.selectedProducto = null;
 }
 
-function openMovimientoModal(tipo) {
+function openMovimientoModal(tipo, productoId = null) {
     state.selectedProducto = null;
     document.getElementById('mov-tipo').value = tipo;
     document.getElementById('mov-form').reset();
@@ -434,6 +434,12 @@ function openMovimientoModal(tipo) {
     const btn = document.getElementById('mov-submit-btn');
     btn.className = tipo === 'ENTRADA' ? 'btn btn-entrada' : 'btn btn-salida';
     btn.innerHTML = tipo === 'ENTRADA' ? '📥 Registrar Entrada' : '📤 Registrar Salida';
+
+    if (productoId !== null && productoId !== undefined) {
+        const prod = DB.getProductos().find(p => String(p.id) === String(productoId));
+        if (prod) selectProductForMovement(prod);
+    }
+
     openModal('modal-movimiento');
     setTimeout(() => document.getElementById('mov-producto-search').focus(), 100);
 }
@@ -451,18 +457,18 @@ function setupAutocomplete(inputId, listId, onSelect) {
         if (q.length < 1) { list.classList.remove('show'); return; }
         const productos = DB.getProductos();
         const matches = productos.filter(p =>
-            p.referencia.toLowerCase().includes(q) ||
-            (p.medida && p.medida.toLowerCase().includes(q)) ||
-            p.categoria.toLowerCase().includes(q)
+            (p.referencia || '').toLowerCase().includes(q) ||
+            (p.medida || '').toLowerCase().includes(q) ||
+            (p.categoria || '').toLowerCase().includes(q)
         ).slice(0, 10);
 
         if (matches.length === 0) { list.classList.remove('show'); return; }
         selectedIdx = -1;
         list.innerHTML = matches.map((p, i) => `
             <div class="autocomplete-item" data-idx="${i}" data-id="${p.id}">
-                <span class="ac-ref">${esc(p.referencia)}</span>
-                <span class="ac-cat">${esc(p.categoria)}</span>
-                <span class="ac-stock">Stock: ${p.stock_actual}</span>
+                <span class="ac-ref">${esc(p.referencia || '')}</span>
+                <span class="ac-cat">${esc(p.categoria || '')}</span>
+                <span class="ac-stock">Stock: ${p.stock_actual || 0}</span>
             </div>
         `).join('');
         list.classList.add('show');
@@ -470,7 +476,6 @@ function setupAutocomplete(inputId, listId, onSelect) {
             const doSelect = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (!list.classList.contains('show')) return;
                 const prodId = item.dataset.id;
                 const prod = productos.find(p => String(p.id) === String(prodId));
                 if (prod) {
