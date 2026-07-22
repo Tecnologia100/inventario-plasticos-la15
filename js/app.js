@@ -330,9 +330,9 @@ function renderProductosTable() {
         <tr>
             <td class="ref">${esc(p.referencia)}</td>
             <td><span class="cat-badge">${esc(p.categoria)}</span></td>
-            <td class="stock-val" style="color:${getStockColor(p)}">${p.stock_actual}</td>
-            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_minimo}" min="0" step="1" onchange="window.updateProductField(${p.id},'stock_minimo',this.value)" title="Stock Mínimo"></div></td>
-            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_maximo}" min="0" step="1" onchange="window.updateProductField(${p.id},'stock_maximo',this.value)" title="Stock Máximo"></div></td>
+            <td class="stock-val"><div class="inline-edit"><input type="number" value="${p.stock_actual || 0}" min="0" step="1" onchange="window.updateProductField('${p.id}','stock_actual',this.value)" style="color:${getStockColor(p)}; font-weight: bold;" title="Stock Actual (Edición rápida estilo Excel)"></div></td>
+            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_minimo || 0}" min="0" step="1" onchange="window.updateProductField('${p.id}','stock_minimo',this.value)" title="Stock Mínimo"></div></td>
+            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_maximo || 0}" min="0" step="1" onchange="window.updateProductField('${p.id}','stock_maximo',this.value)" title="Stock Máximo"></div></td>
             <td>${renderStatusBadge(p)}</td>
         </tr>
     `).join('');
