@@ -467,14 +467,19 @@ function setupAutocomplete(inputId, listId, onSelect) {
         `).join('');
         list.classList.add('show');
         list.querySelectorAll('.autocomplete-item').forEach(item => {
-            item.addEventListener('click', (e) => {
+            const doSelect = (e) => {
                 e.preventDefault();
-                const prod = productos.find(p => String(p.id) === String(item.dataset.id));
+                e.stopPropagation();
+                if (!list.classList.contains('show')) return;
+                const prodId = item.dataset.id;
+                const prod = productos.find(p => String(p.id) === String(prodId));
                 if (prod) {
                     onSelect(prod);
                     list.classList.remove('show');
                 }
-            });
+            };
+            item.addEventListener('pointerdown', doSelect);
+            item.addEventListener('click', doSelect);
         });
     });
 
@@ -493,7 +498,7 @@ function selectProductForMovement(producto) {
     document.getElementById('mov-producto-search').value = `${producto.referencia} — ${producto.categoria}`;
     document.getElementById('mov-producto-id').value = producto.id;
     document.getElementById('mov-stock-info').style.display = 'flex';
-    document.getElementById('mov-stock-display').textContent = `${producto.stock_actual} ${producto.unidad}`;
+    document.getElementById('mov-stock-display').textContent = `${producto.stock_actual} ${producto.unidad || 'Und'}`;
 }
 
 // ══════════════════════════════════════════════
@@ -504,19 +509,20 @@ async function submitMovimiento(e) {
     const btn = document.getElementById('mov-submit-btn');
     btn.disabled = true;
 
-    const productoId = parseInt(document.getElementById('mov-producto-id').value);
+    const producto = state.selectedProducto;
+    const productoId = producto ? producto.id : document.getElementById('mov-producto-id').value;
     const tipo = document.getElementById('mov-tipo').value;
     const cantidad = parseFloat(document.getElementById('mov-cantidad').value);
     const remision = document.getElementById('mov-remision').value.trim();
     const contacto = document.getElementById('mov-contacto').value.trim();
     const observaciones = document.getElementById('mov-observaciones').value.trim();
 
-    if (!productoId) { showToast('Selecciona un producto', 'error'); btn.disabled = false; return; }
+    if (productoId === null || productoId === undefined || productoId === "") { showToast('Selecciona un producto', 'error'); btn.disabled = false; return; }
     if (!cantidad || cantidad <= 0) { showToast('La cantidad debe ser mayor a 0', 'error'); btn.disabled = false; return; }
     if (tipo === 'SALIDA' && !remision) { showToast('El Nº de remisión es obligatorio para salidas', 'error'); btn.disabled = false; return; }
 
     const result = await DB.registrarMovimiento(
-        productoId, tipo, cantidad, remision,
+        producto || productoId, tipo, cantidad, remision,
         tipo === 'SALIDA' ? contacto : null,
         tipo === 'ENTRADA' ? contacto : null,
         observaciones
