@@ -467,20 +467,14 @@ function setupAutocomplete(inputId, listId, onSelect) {
         `).join('');
         list.classList.add('show');
         list.querySelectorAll('.autocomplete-item').forEach(item => {
-            const handleSelect = (e) => {
-                e.preventDefault(); // Evita que el input pierda el foco
-                selectProduct();
-            };
-            item.addEventListener('mousedown', handleSelect);
-            item.addEventListener('touchstart', handleSelect, {passive: false});
-
-            const selectProduct = () => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
                 const prod = productos.find(p => String(p.id) === String(item.dataset.id));
                 if (prod) {
                     onSelect(prod);
                     list.classList.remove('show');
                 }
-            };
+            });
         });
     });
 
