@@ -41,7 +41,9 @@ const DB = {
             onValue(ref(database, 'productos'), async (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    this.productos = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
+                    this.productos = Array.isArray(data) 
+                        ? data.map((p, i) => p ? { ...p, id: p.id !== undefined ? p.id : i } : null).filter(Boolean) 
+                        : Object.entries(data).map(([k, v]) => ({ ...v, id: v.id !== undefined ? v.id : k }));
                 } else {
                     await this.loadInitialData();
                 }
@@ -535,7 +537,7 @@ async function submitMovimiento(e) {
     const contacto = document.getElementById('mov-contacto').value.trim();
     const observaciones = document.getElementById('mov-observaciones').value.trim();
 
-    if (!productoId) { showToast('Selecciona un producto', 'error'); btn.disabled = false; return; }
+    if (productoId === null || productoId === undefined || productoId === "") { showToast('Selecciona un producto', 'error'); btn.disabled = false; return; }
     if (!cantidad || cantidad <= 0) { showToast('La cantidad debe ser mayor a 0', 'error'); btn.disabled = false; return; }
     if (tipo === 'SALIDA' && !remision) { showToast('El Nº de remisión es obligatorio para salidas', 'error'); btn.disabled = false; return; }
 
