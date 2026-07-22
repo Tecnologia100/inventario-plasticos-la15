@@ -95,7 +95,7 @@ const DB = {
     getMovimientos() { return this.movimientos; },
 
     async registrarMovimiento(productoId, tipo, cantidad, remision, cliente, proveedor, observaciones) {
-        const index = this.productos.findIndex(p => p.id === productoId);
+        const index = this.productos.findIndex(p => String(p.id) === String(productoId));
         if (index === -1) return { ok: false, error: 'Producto no encontrado' };
 
         const producto = this.productos[index];
@@ -140,7 +140,7 @@ const DB = {
     },
 
     async updateProducto(productoId, field, value) {
-        const index = this.productos.findIndex(pr => pr.id === productoId);
+        const index = this.productos.findIndex(pr => String(pr.id) === String(productoId));
         if (index !== -1) {
             try {
                 await set(ref(database, `productos/${index}/${field}`), parseFloat(value) || 0);
