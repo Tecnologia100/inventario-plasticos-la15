@@ -95,10 +95,29 @@ const DB = {
     getMovimientos() { return this.movimientos; },
 
     async registrarMovimiento(productoId, tipo, cantidad, remision, cliente, proveedor, observaciones) {
-        const index = this.productos.findIndex(p => String(p.id) === String(productoId));
-        if (index === -1) return { ok: false, error: 'Producto no encontrado' };
+        const producto = this.productos.find(p => String(p.id) === String(productoId));
+        if (!producto) return { ok: false, error: 'Producto no encontrado' };
 
-        const producto = this.productos[index];
+        // Find the real Firebase index by looking up in the raw snapshot
+        // Since filter(Boolean) may shift indices, we need the original index
+        const snapshot = await new Promise(resolve => {
+            onValue(ref(database, 'productos'), resolve, { onlyOnce: true });
+        });
+        const rawData = snapshot.val();
+        let firebaseIndex = -1;
+        if (Array.isArray(rawData)) {
+            firebaseIndex = rawData.findIndex(p => p && String(p.id) === String(productoId));
+        } else if (rawData) {
+            // Object-based: find the key
+            for (const [key, val] of Object.entries(rawData)) {
+                if (val && String(val.id) === String(productoId)) {
+                    firebaseIndex = key;
+                    break;
+                }
+            }
+        }
+        if (firebaseIndex === -1) return { ok: false, error: 'Producto no encontrado en Firebase' };
+
         let nuevoStock = producto.stock_actual;
 
         if (tipo === 'SALIDA') {
@@ -111,7 +130,7 @@ const DB = {
         }
 
         const updates = {};
-        updates[`/productos/${index}/stock_actual`] = nuevoStock;
+        updates[`/productos/${firebaseIndex}/stock_actual`] = nuevoStock;
 
         const movRef = push(ref(database, 'movimientos'));
         const movData = {
@@ -508,7 +527,8 @@ async function submitMovimiento(e) {
     const btn = document.getElementById('mov-submit-btn');
     btn.disabled = true;
 
-    const productoId = document.getElementById('mov-producto-id').value;
+    // Use selectedProducto from state directly to avoid type mismatch issues
+    const productoId = state.selectedProducto ? state.selectedProducto.id : document.getElementById('mov-producto-id').value;
     const tipo = document.getElementById('mov-tipo').value;
     const cantidad = parseFloat(document.getElementById('mov-cantidad').value);
     const remision = document.getElementById('mov-remision').value.trim();
