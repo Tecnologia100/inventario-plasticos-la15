@@ -825,6 +825,7 @@ function updateThemeIcon(theme) {
 function openProductoModal(productoId = null) {
     document.getElementById('prod-form').reset();
     document.getElementById('prod-id').value = '';
+    const deleteBtn = document.getElementById('prod-delete-btn');
 
     const datalist = document.getElementById('prod-categoria-list');
     if (datalist) {
@@ -844,14 +845,22 @@ function openProductoModal(productoId = null) {
             document.getElementById('prod-stock-actual').value = prod.stock_actual || 0;
             document.getElementById('prod-stock-minimo').value = prod.stock_minimo || 0;
             document.getElementById('prod-stock-maximo').value = prod.stock_maximo || 0;
+            if (deleteBtn) deleteBtn.style.display = 'inline-flex';
         }
     } else {
         document.getElementById('prod-modal-title').innerHTML = '➕ Nuevo Producto';
         document.getElementById('prod-submit-btn').innerHTML = '➕ Crear Producto';
+        if (deleteBtn) deleteBtn.style.display = 'none';
     }
 
     openModal('modal-producto');
     setTimeout(() => document.getElementById('prod-referencia').focus(), 100);
+}
+
+async function eliminarProductoDesdeModal() {
+    const prodId = document.getElementById('prod-id').value;
+    if (!prodId) return;
+    await eliminarProducto(prodId);
 }
 
 async function submitProductoForm(e) {
@@ -897,6 +906,7 @@ window.eliminarProducto = eliminarProducto;
 window.submitMovimiento = submitMovimiento;
 window.openProductoModal = openProductoModal;
 window.submitProductoForm = submitProductoForm;
+window.eliminarProductoDesdeModal = eliminarProductoDesdeModal;
 window.closeAllModals = closeAllModals;
 window.updateProductField = updateProductField;
 window.filterMovimientos = filterMovimientos;

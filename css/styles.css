@@ -258,7 +258,7 @@ body::before {
 /* ── Table ── */
 .table-container {
     background: var(--bg-glass); backdrop-filter: blur(12px);
-    border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden;
+    border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow-x: auto;
 }
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table thead th {

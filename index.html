@@ -296,14 +296,19 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-ghost" onclick="closeAllModals()">Cancelar</button>
-                    <button type="submit" class="btn btn-entrada" id="prod-submit-btn">💾 Guardar Producto</button>
+                <div class="modal-footer" style="justify-content: space-between;">
+                    <button type="button" class="btn btn-ghost" id="prod-delete-btn" onclick="eliminarProductoDesdeModal()" style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.4); display: none;">
+                        🗑️ Eliminar Producto
+                    </button>
+                    <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+                        <button type="button" class="btn btn-ghost" onclick="closeAllModals()">Cancelar</button>
+                        <button type="submit" class="btn btn-entrada" id="prod-submit-btn">💾 Guardar Producto</button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <script type="module" src="js/app.js?v=18"></script>
+    <script type="module" src="js/app.js?v=19"></script>
 </body>
 </html>
