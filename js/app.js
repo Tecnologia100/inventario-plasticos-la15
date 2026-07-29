@@ -4,7 +4,7 @@
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC9zOPHxrxq7jezYCfDRwU3IUdvJfFTvTA",
@@ -194,6 +194,15 @@ const DB = {
         }
     },
 
+    async eliminarProducto(productoId) {
+        try {
+            await remove(ref(database, `productos/${productoId}`));
+            return { ok: true };
+        } catch(e) {
+            return { ok: false, error: e.message };
+        }
+    },
+
     getStats() {
         const hoy = new Date().toISOString().slice(0, 10);
         const total = this.productos.filter(p => p.activo !== false).length;
@@ -372,7 +381,12 @@ function renderProductosTable() {
             <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_minimo || 0}" min="0" step="1" onchange="window.updateProductField('${p.id}','stock_minimo',this.value)" title="Stock Mínimo"></div></td>
             <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_maximo || 0}" min="0" step="1" onchange="window.updateProductField('${p.id}','stock_maximo',this.value)" title="Stock Máximo"></div></td>
             <td>${renderStatusBadge(p)}</td>
-            <td style="text-align: center;"><button class="btn-sm btn-ghost" onclick="window.openProductoModal('${p.id}')" title="Editar ficha completa de ${esc(p.referencia)}">✏️</button></td>
+            <td style="text-align: center; white-space: nowrap;">
+                <button class="btn btn-ghost btn-sm" onclick="window.openProductoModal('${p.id}')" title="Editar ficha completa de ${esc(p.referencia)}" style="padding: 4px 8px; font-size: 0.9rem; margin-right: 4px;">✏️</button>
+                <button class="btn btn-ghost btn-sm" onclick="window.eliminarProducto('${p.id}')" title="Eliminar referencia" style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.3); padding: 4px 8px; font-size: 0.9rem;">
+                    🗑️
+                </button>
+            </td>
         </tr>
     `).join('');
 }
@@ -483,6 +497,64 @@ function openMovimientoModal(tipo, productoId = null) {
 
     openModal('modal-movimiento');
     setTimeout(() => document.getElementById('mov-producto-search').focus(), 100);
+}
+
+function openNuevoProductoModal() {
+    document.getElementById('nuevo-producto-form').reset();
+    const catList = document.getElementById('categorias-list');
+    if (catList) {
+        catList.innerHTML = DB.getCategorias().map(c => `<option value="${esc(c)}">`).join('');
+    }
+    openModal('modal-nuevo-producto');
+    setTimeout(() => document.getElementById('prod-referencia').focus(), 100);
+}
+
+async function submitNuevoProducto(e) {
+    e.preventDefault();
+    const referencia = document.getElementById('prod-referencia').value.trim();
+    const categoria = document.getElementById('prod-categoria').value.trim();
+    const stock_actual = parseFloat(document.getElementById('prod-stock').value) || 0;
+    const stock_minimo = parseFloat(document.getElementById('prod-min').value) || 0;
+    const stock_maximo = parseFloat(document.getElementById('prod-max').value) || 0;
+
+    if (!referencia || !categoria) {
+        showToast('Completa los campos obligatorios (*)', 'error');
+        return;
+    }
+
+    const res = await DB.crearProducto({
+        referencia,
+        categoria,
+        stock_actual,
+        stock_minimo,
+        stock_maximo,
+        activo: true
+    });
+
+    if (res.ok) {
+        showToast(`✅ Referencia "${referencia}" creada correctamente`, 'success');
+        closeAllModals();
+    } else {
+        showToast('Error al crear: ' + res.error, 'error');
+    }
+}
+
+async function eliminarProducto(productoId) {
+    const prod = DB.getProductos().find(p => String(p.id) === String(productoId));
+    if (!prod) {
+        showToast('Referencia no encontrada', 'error');
+        return;
+    }
+
+    const confirmacion = confirm(`⚠️ ¿Estás seguro de que deseas eliminar la referencia:\n\n"${prod.referencia}" (${prod.categoria})?\n\nEsta acción se sincronizará inmediatamente en la base de datos.`);
+    if (!confirmacion) return;
+
+    const res = await DB.eliminarProducto(prod.id);
+    if (res.ok) {
+        showToast(`🗑️ Referencia "${prod.referencia}" eliminada`, 'success');
+    } else {
+        showToast('Error al eliminar: ' + res.error, 'error');
+    }
 }
 
 // ══════════════════════════════════════════════
@@ -819,6 +891,9 @@ async function submitProductoForm(e) {
 // ══════════════════════════════════════════════
 window.filterByCategoria = filterByCategoria;
 window.openMovimientoModal = openMovimientoModal;
+window.openNuevoProductoModal = openNuevoProductoModal;
+window.submitNuevoProducto = submitNuevoProducto;
+window.eliminarProducto = eliminarProducto;
 window.submitMovimiento = submitMovimiento;
 window.openProductoModal = openProductoModal;
 window.submitProductoForm = submitProductoForm;
