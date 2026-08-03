@@ -435,7 +435,7 @@ select.form-control option { background: var(--bg-secondary); color: var(--text-
 
 /* ── Inline edit ── */
 .inline-edit input {
-    width: 85px; padding: 4px 4px; background: var(--bg-input);
+    width: 95px; padding: 4px 4px; background: var(--bg-input);
     border: 1px solid transparent; border-radius: 4px; color: var(--text-primary);
     font-family: inherit; font-size: 0.82rem; text-align: center;
     font-variant-numeric: tabular-nums; transition: all var(--transition-fast);

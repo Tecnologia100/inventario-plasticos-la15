@@ -147,7 +147,8 @@ const DB = {
         const producto = this.productos.find(pr => String(pr.id) === String(productoId));
         if (producto) {
             try {
-                await set(ref(database, `productos/${producto.id}/${field}`), parseFloat(value) || 0);
+                const parsedVal = Math.round((parseFloat(value) || 0) * 100) / 100;
+                await set(ref(database, `productos/${producto.id}/${field}`), parsedVal);
                 return true;
             } catch(e) {
                 console.error(e);
@@ -166,9 +167,9 @@ const DB = {
                     categoria: data.categoria || '',
                     medida: data.medida || '',
                     unidad: data.unidad || 'Und',
-                    stock_actual: parseFloat(data.stock_actual) || 0,
-                    stock_minimo: parseFloat(data.stock_minimo) || 0,
-                    stock_maximo: parseFloat(data.stock_maximo) || 0
+                    stock_actual: Math.round((parseFloat(data.stock_actual) || 0) * 100) / 100,
+                    stock_minimo: Math.round((parseFloat(data.stock_minimo) || 0) * 100) / 100,
+                    stock_maximo: Math.round((parseFloat(data.stock_maximo) || 0) * 100) / 100
                 };
                 await update(ref(database, `productos/${targetKey}`), updateData);
                 return { ok: true, isEdit: true };
@@ -180,9 +181,9 @@ const DB = {
                     categoria: data.categoria || '',
                     medida: data.medida || '',
                     unidad: data.unidad || 'Und',
-                    stock_actual: parseFloat(data.stock_actual) || 0,
-                    stock_minimo: parseFloat(data.stock_minimo) || 0,
-                    stock_maximo: parseFloat(data.stock_maximo) || 0,
+                    stock_actual: Math.round((parseFloat(data.stock_actual) || 0) * 100) / 100,
+                    stock_minimo: Math.round((parseFloat(data.stock_minimo) || 0) * 100) / 100,
+                    stock_maximo: Math.round((parseFloat(data.stock_maximo) || 0) * 100) / 100,
                     activo: true
                 };
                 await set(newRef, newProductData);
@@ -377,9 +378,9 @@ function renderProductosTable() {
         <tr>
             <td class="ref">${esc(p.referencia)}</td>
             <td><span class="cat-badge">${esc(p.categoria)}</span></td>
-            <td class="stock-val"><div class="inline-edit"><input type="number" value="${p.stock_actual || 0}" min="0" step="1" onchange="window.updateProductField('${p.id}','stock_actual',this.value)" style="color:${getStockColor(p)}; font-weight: bold;" title="Stock Actual (Edición rápida estilo Excel)"></div></td>
-            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_minimo || 0}" min="0" step="1" onchange="window.updateProductField('${p.id}','stock_minimo',this.value)" title="Stock Mínimo"></div></td>
-            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_maximo || 0}" min="0" step="1" onchange="window.updateProductField('${p.id}','stock_maximo',this.value)" title="Stock Máximo"></div></td>
+            <td class="stock-val"><div class="inline-edit"><input type="number" value="${p.stock_actual !== undefined ? p.stock_actual : 0}" min="0" step="0.01" onchange="window.updateProductField('${p.id}','stock_actual',this.value)" style="color:${getStockColor(p)}; font-weight: bold;" title="Stock Actual (Edición rápida estilo Excel)"></div></td>
+            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_minimo !== undefined ? p.stock_minimo : 0}" min="0" step="0.01" onchange="window.updateProductField('${p.id}','stock_minimo',this.value)" title="Stock Mínimo"></div></td>
+            <td class="hide-tablet"><div class="inline-edit"><input type="number" value="${p.stock_maximo !== undefined ? p.stock_maximo : 0}" min="0" step="0.01" onchange="window.updateProductField('${p.id}','stock_maximo',this.value)" title="Stock Máximo"></div></td>
             <td>${renderStatusBadge(p)}</td>
             <td style="text-align: center; white-space: nowrap;">
                 <button class="btn btn-ghost btn-sm" onclick="window.openProductoModal('${p.id}')" title="Editar ficha completa de ${esc(p.referencia)}" style="padding: 4px 8px; font-size: 0.9rem; margin-right: 4px;">✏️</button>
