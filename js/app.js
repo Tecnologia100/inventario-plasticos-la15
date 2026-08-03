@@ -20,6 +20,23 @@ const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
 // ══════════════════════════════════════════════
+// Función auxiliar para ordenar productos por categoría y referencia
+// ══════════════════════════════════════════════
+function sortProductosByCategoria(productos) {
+    if (!Array.isArray(productos)) return [];
+    return [...productos].sort((a, b) => {
+        const catA = (a && a.categoria ? String(a.categoria) : '').toLowerCase();
+        const catB = (b && b.categoria ? String(b.categoria) : '').toLowerCase();
+        const catComp = catA.localeCompare(catB, 'es', { sensitivity: 'base' });
+        if (catComp !== 0) return catComp;
+
+        const refA = (a && a.referencia ? String(a.referencia) : '').toLowerCase();
+        const refB = (b && b.referencia ? String(b.referencia) : '').toLowerCase();
+        return refA.localeCompare(refB, 'es', { numeric: true, sensitivity: 'base' });
+    });
+}
+
+// ══════════════════════════════════════════════
 // Motor de datos — Firebase
 // ══════════════════════════════════════════════
 const DB = {
@@ -41,9 +58,10 @@ const DB = {
             onValue(ref(database, 'productos'), async (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    this.productos = Array.isArray(data) 
+                    const rawProds = Array.isArray(data) 
                         ? data.map((p, i) => p ? { ...p, id: p.id !== undefined ? p.id : i } : null).filter(Boolean) 
                         : Object.entries(data).map(([k, v]) => ({ ...v, id: v.id !== undefined ? v.id : k }));
+                    this.productos = sortProductosByCategoria(rawProds);
                 } else {
                     await this.loadInitialData();
                 }
@@ -84,16 +102,17 @@ const DB = {
         try {
             const res = await fetch('data/productos.json');
             const data = await res.json();
+            const sortedData = sortProductosByCategoria(data);
             // Guardar en Firebase
-            await set(ref(database, 'productos'), data);
+            await set(ref(database, 'productos'), sortedData);
             console.log("✅ Datos iniciales subidos a Firebase");
-            this.productos = data;
+            this.productos = sortedData;
         } catch(e) {
             console.error("Error loading initial data", e);
         }
     },
 
-    getProductos() { return this.productos; },
+    getProductos() { return sortProductosByCategoria(this.productos); },
     getMovimientos() { return this.movimientos; },
 
     async registrarMovimiento(productoOrId, tipo, cantidad, remision, cliente, proveedor, observaciones) {
@@ -214,8 +233,12 @@ const DB = {
         return { total_productos: total, alerta_bajo, alerta_alto, stock_ok, movimientos_hoy: mov_hoy };
     },
 
+    async crearProducto(data) {
+        return this.guardarProducto(data);
+    },
+
     getCategorias() {
-        return [...new Set(this.productos.map(p => p.categoria))].sort();
+        return [...new Set(this.productos.map(p => p && p.categoria).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
     }
 };
 
@@ -367,6 +390,7 @@ function renderProductosTable() {
         );
     }
     productos = applyCardFilter(productos);
+    productos = sortProductosByCategoria(productos);
 
     const tbody = document.getElementById('productos-tbody');
     if (productos.length === 0) {
@@ -733,6 +757,7 @@ function exportarExcel() {
         );
     }
     productos = applyCardFilter(productos);
+    productos = sortProductosByCategoria(productos);
 
     if (productos.length === 0) {
         showToast('No hay productos para exportar con los filtros seleccionados', 'error');
@@ -741,16 +766,18 @@ function exportarExcel() {
     
     // Create CSV content with BOM for Excel UTF-8 compatibility
     const BOM = "\uFEFF";
-    let csvContent = BOM + "Referencia;Categoría;Stock Mínimo;Stock Máximo;Stock Actual\n";
+    let csvContent = BOM + "Referencia;Categoría;Medida;Unidad;Stock Mínimo;Stock Máximo;Stock Actual\n";
     
     productos.forEach(p => {
         const ref = (p.referencia || "").replace(/;/g, ",");
         const cat = (p.categoria || "").replace(/;/g, ",");
-        const min = p.stock_minimo || 0;
-        const max = p.stock_maximo || 0;
-        const actual = p.stock_actual || 0;
+        const med = (p.medida || "").replace(/;/g, ",");
+        const und = (p.unidad || "Und").replace(/;/g, ",");
+        const min = p.stock_minimo !== undefined ? p.stock_minimo : 0;
+        const max = p.stock_maximo !== undefined ? p.stock_maximo : 0;
+        const actual = p.stock_actual !== undefined ? p.stock_actual : 0;
         
-        csvContent += `${ref};${cat};${min};${max};${actual}\n`;
+        csvContent += `${ref};${cat};${med};${und};${min};${max};${actual}\n`;
     });
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
