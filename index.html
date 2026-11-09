@@ -3,312 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sistema de Control de Inventario - Plásticos La 15">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="theme-color" content="#0a0e17">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Plásticos La 15 — Inventario</title>
-    <link rel="stylesheet" href="css/styles.css?v=4">
+    <title>Plásticos La 15 — Fuera de Servicio Temporalmente</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏭</text></svg>">
+    <style>
+        :root {
+            --bg-color: #0a0e17;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-amber: #f59e0b;
+            --accent-blue: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+                radial-gradient(at 80% 80%, rgba(245, 158, 11, 0.08) 0px, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 3rem 2rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .icon-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+
+        .icon-factory {
+            font-size: 3.5rem;
+            line-height: 1;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+        }
+
+        .pause-badge {
+            position: absolute;
+            bottom: -6px;
+            right: -8px;
+            background: #1e293b;
+            border: 2px solid var(--bg-color);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.35rem;
+            color: #ffffff;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.75rem;
+            font-weight: 500;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 999px;
+            font-size: 0.85rem;
+            color: #fbbf24;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #fbbf24;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #fbbf24;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        p.description {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+            margin-bottom: 2rem;
+        }
+
+        .footer-note {
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.25rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+    </style>
 </head>
 <body>
 
-    <!-- ═══════ HEADER ═══════ -->
-    <header class="header">
-        <div class="header-inner">
-            <div class="logo">
-                <div class="logo-icon">🏭</div>
-                <div class="logo-text">
-                    <h1>Plásticos La 15</h1>
-                    <span>Control de Inventario</span>
-                </div>
-            </div>
-            <nav class="nav">
-                <button class="nav-btn active" data-view="dashboard">
-                    <span>📊</span><span class="nav-label">Inventario</span>
-                </button>
-                <button class="nav-btn" data-view="movimientos">
-                    <span>📦</span><span class="nav-label">Movimientos</span>
-                </button>
-                <button class="nav-btn" data-view="historial">
-                    <span>📋</span><span class="nav-label">Historial</span>
-                    <span class="badge" id="alert-badge" style="display:none">0</span>
-                </button>
-                <div style="width: 1px; background: var(--border-color); margin: 0 4px;"></div>
-                <button class="nav-btn" id="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
-                    <span id="theme-icon">☀️</span>
-                </button>
-            </nav>
+    <main class="card">
+        <div class="icon-wrapper">
+            <div class="icon-factory">🏭</div>
+            <div class="pause-badge">⏸️</div>
         </div>
-    </header>
 
-    <div class="toast-container" id="toast-container"></div>
+        <h1>Plásticos La 15</h1>
+        <div class="subtitle">Sistema de Control de Inventario</div>
 
-    <main class="main">
+        <div class="status-pill">
+            <span class="status-dot"></span>
+            <span>Sistema Pausado Temporalmente</span>
+        </div>
 
-        <!-- ─────── DASHBOARD ─────── -->
-        <section id="view-dashboard" class="view-section active">
+        <p class="description">
+            La plataforma se encuentra fuera de servicio por mantenimiento y control administrativo.
+            El acceso y las operaciones de inventario estarán disponibles nuevamente muy pronto.
+        </p>
 
-            <!-- Backup bar -->
-            <div class="backup-bar">
-                <div class="backup-info">
-                    ☁️ Datos sincronizados automáticamente en la nube.
-                </div>
-                <div class="backup-actions">
-                    <button class="btn btn-entrada btn-sm" onclick="exportarExcel()">📊 Exportar a Excel</button>
-                    <button class="btn btn-backup btn-sm" onclick="exportarBackup()">📥 Backup (JSON)</button>
-                </div>
-            </div>
-
-            <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card accent" onclick="filterByCard('total', this)">
-                    <div class="stat-icon">📦</div>
-                    <div class="stat-value" id="stat-total">0</div>
-                    <div class="stat-label">Total Productos</div>
-                </div>
-                <div class="stat-card ok" onclick="filterByCard('ok', this)">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-value" id="stat-ok">0</div>
-                    <div class="stat-label">Stock Normal</div>
-                </div>
-                <div class="stat-card danger" onclick="filterByCard('bajo', this)">
-                    <div class="stat-icon">🔴</div>
-                    <div class="stat-value" id="stat-bajo">0</div>
-                    <div class="stat-label">Stock Bajo</div>
-                </div>
-                <div class="stat-card warning" onclick="filterByCard('alto', this)">
-                    <div class="stat-icon">🟠</div>
-                    <div class="stat-value" id="stat-alto">0</div>
-                    <div class="stat-label">Sobre-stock</div>
-                </div>
-                <div class="stat-card info" onclick="filterByCard('mov_hoy', this)">
-                    <div class="stat-icon">📝</div>
-                    <div class="stat-value" id="stat-mov-hoy">0</div>
-                    <div class="stat-label">Movimientos Hoy</div>
-                </div>
-            </div>
-
-            <!-- Alerts -->
-            <div class="alerts-panel" id="alerts-panel">
-                <div class="alerts-title">⚠️ Alertas de Inventario</div>
-                <div id="alerts-list"></div>
-            </div>
-
-            <!-- Toolbar -->
-            <div class="toolbar">
-                <div class="search-box">
-                    <span class="icon">🔍</span>
-                    <input type="text" id="search-input" placeholder="Buscar por referencia, medida o categoría...">
-                </div>
-                <select class="filter-select" id="filter-categoria" onchange="filterByCategoria(this.value)">
-                    <option value="">Todas las categorías</option>
-                </select>
-                <button class="btn btn-backup" onclick="openProductoModal()"><span style="font-size:1.1rem">➕</span> Nuevo Producto</button>
-                <button class="btn btn-entrada" onclick="openMovimientoModal('ENTRADA')">📥 Entrada</button>
-                <button class="btn btn-salida" onclick="openMovimientoModal('SALIDA')">📤 Salida</button>
-            </div>
-
-            <!-- Products Table -->
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Referencia</th>
-                            <th>Categoría</th>
-                            <th>Stock</th>
-                            <th class="hide-tablet">Mínimo</th>
-                            <th class="hide-tablet">Máximo</th>
-                            <th>Estado</th>
-                            <th style="width: 100px; text-align: center;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productos-tbody">
-                        <tr><td colspan="7"><div class="loading-overlay"><div class="spinner"></div> Cargando...</div></td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- ─────── MOVIMIENTOS ─────── -->
-        <section id="view-movimientos" class="view-section">
-            <div style="max-width: 700px; margin: 0 auto;">
-                <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
-                    📦 Registrar Movimiento
-                </h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-                    <button class="btn btn-entrada" style="padding: 2rem; flex-direction: column; font-size: 1.1rem; border-radius: var(--radius-lg);"
-                            onclick="openMovimientoModal('ENTRADA')">
-                        <span style="font-size: 2.5rem; margin-bottom: 0.5rem;">📥</span>
-                        Registrar Entrada
-                        <span style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; margin-top: 4px;">Reabastecimiento</span>
-                    </button>
-                    <button class="btn btn-salida" style="padding: 2rem; flex-direction: column; font-size: 1.1rem; border-radius: var(--radius-lg);"
-                            onclick="openMovimientoModal('SALIDA')">
-                        <span style="font-size: 2.5rem; margin-bottom: 0.5rem;">📤</span>
-                        Registrar Salida
-                        <span style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; margin-top: 4px;">Venta / Remisión</span>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- ─────── HISTORIAL ─────── -->
-        <section id="view-historial" class="view-section">
-            <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
-                📋 Historial de Movimientos
-            </h2>
-            <div class="toolbar">
-                <div class="search-box">
-                    <span class="icon">🔍</span>
-                    <input type="text" id="mov-filter-busqueda" placeholder="Buscar por referencia o remisión..." oninput="filterMovimientos()">
-                </div>
-                <select class="filter-select" id="mov-filter-tipo" onchange="filterMovimientos()">
-                    <option value="">Todos los tipos</option>
-                    <option value="ENTRADA">📥 Entradas</option>
-                    <option value="SALIDA">📤 Salidas</option>
-                </select>
-                <div class="date-filters">
-                    <input type="date" id="mov-filter-desde" onchange="filterMovimientos()" title="Desde">
-                    <span style="color: var(--text-muted);">a</span>
-                    <input type="date" id="mov-filter-hasta" onchange="filterMovimientos()" title="Hasta">
-                </div>
-            </div>
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th><th>Tipo</th><th>Referencia</th><th>Categoría</th>
-                            <th>Cantidad</th><th>Remisión</th>
-                            <th class="hide-tablet">Cliente/Prov.</th>
-                            <th class="hide-tablet">Usuario</th>
-                        </tr>
-                    </thead>
-                    <tbody id="movimientos-tbody">
-                        <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><p>Los movimientos aparecerán aquí</p></div></td></tr>
-                    </tbody>
-                </table>
-                <div class="pagination" id="mov-pagination" style="display: none;">
-                    <button class="page-btn" id="btn-prev" onclick="movPagPrev()">← Anterior</button>
-                    <span class="page-info" id="page-info">Página 1</span>
-                    <button class="page-btn" id="btn-next" onclick="movPagNext()">Siguiente →</button>
-                </div>
-            </div>
-        </section>
-
+        <div class="footer-note">
+            Para gestiones o consultas urgentes, por favor contacta a la administración.
+        </div>
     </main>
 
-    <!-- ═══════ MODAL: MOVIMIENTO ═══════ -->
-    <div class="modal-overlay" id="modal-movimiento">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="mov-modal-title">📥 Registrar Movimiento</h2>
-                <button class="modal-close" onclick="closeAllModals()">✕</button>
-            </div>
-            <form id="mov-form" onsubmit="submitMovimiento(event)">
-                <div class="modal-body">
-                    <input type="hidden" id="mov-tipo" value="ENTRADA">
-                    <input type="hidden" id="mov-producto-id" value="">
-                    <div class="form-group">
-                        <label>Producto <span class="required">*</span></label>
-                        <div class="autocomplete-container">
-                            <input type="text" class="form-control" id="mov-producto-search"
-                                   placeholder="Buscar por referencia, medida..." autocomplete="off" required>
-                            <div class="autocomplete-list" id="mov-autocomplete-list"></div>
-                        </div>
-                    </div>
-                    <div class="stock-info" id="mov-stock-info" style="display: none;">
-                        <div>
-                            <span class="stock-label">Stock disponible</span>
-                            <div class="stock-number" id="mov-stock-display">0</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Cantidad <span class="required">*</span></label>
-                        <input type="number" class="form-control" id="mov-cantidad" min="0.01" step="0.01" placeholder="Ej: 5" required>
-                    </div>
-                    <div class="form-group">
-                        <label id="remision-label">Nº Remisión</label>
-                        <input type="text" class="form-control" id="mov-remision" placeholder="Ej: REM-001234">
-                    </div>
-                    <div class="form-group">
-                        <label id="contacto-label">Cliente (opcional)</label>
-                        <input type="text" class="form-control" id="mov-contacto" placeholder="Nombre del cliente o proveedor">
-                    </div>
-                    <div class="form-group">
-                        <label>Observaciones</label>
-                        <input type="text" class="form-control" id="mov-observaciones" placeholder="Notas adicionales...">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-ghost" onclick="closeAllModals()">Cancelar</button>
-                    <button type="submit" class="btn btn-entrada" id="mov-submit-btn">📥 Registrar Entrada</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ═══════ MODAL: AGREGAR / EDITAR PRODUCTO ═══════ -->
-    <div class="modal-overlay" id="modal-producto">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="prod-modal-title">➕ Nuevo Producto</h2>
-                <button class="modal-close" onclick="closeAllModals()">✕</button>
-            </div>
-            <form id="prod-form" onsubmit="submitProductoForm(event)">
-                <div class="modal-body">
-                    <input type="hidden" id="prod-id" value="">
-                    <div class="form-group">
-                        <label>Referencia <span class="required">*</span></label>
-                        <input type="text" class="form-control" id="prod-referencia" placeholder="Ej: 6X10X02 LILA" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Categoría <span class="required">*</span></label>
-                        <input type="text" class="form-control" id="prod-categoria" list="prod-categoria-list" placeholder="Ej: OVALO ALTA DENSIDAD" required>
-                        <datalist id="prod-categoria-list"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label>Medida / Calibre (Opcional)</label>
-                        <input type="text" class="form-control" id="prod-medida" placeholder="Ej: 6&quot; X 10&quot;">
-                    </div>
-                    <div class="form-group">
-                        <label>Unidad de Medida</label>
-                        <select class="form-control" id="prod-unidad">
-                            <option value="Und">Und (Unidades)</option>
-                            <option value="Millar">Millar</option>
-                            <option value="Paquete">Paquete</option>
-                            <option value="Rollo">Rollo</option>
-                            <option value="Kilo">Kilo</option>
-                        </select>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                        <div class="form-group">
-                            <label>Stock Actual</label>
-                            <input type="number" class="form-control" id="prod-stock-actual" min="0" step="0.01" value="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Stock Mínimo</label>
-                            <input type="number" class="form-control" id="prod-stock-minimo" min="0" step="0.01" value="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Stock Máximo</label>
-                            <input type="number" class="form-control" id="prod-stock-maximo" min="0" step="0.01" value="0">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer" style="justify-content: space-between;">
-                    <button type="button" class="btn btn-ghost" id="prod-delete-btn" onclick="eliminarProductoDesdeModal()" style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.4); display: none;">
-                        🗑️ Eliminar Producto
-                    </button>
-                    <div style="display: flex; gap: 0.5rem; margin-left: auto;">
-                        <button type="button" class="btn btn-ghost" onclick="closeAllModals()">Cancelar</button>
-                        <button type="submit" class="btn btn-entrada" id="prod-submit-btn">💾 Guardar Producto</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script type="module" src="js/app.js?v=20"></script>
 </body>
 </html>
